@@ -63,14 +63,46 @@ async fn fetch_thread(id: &str) -> Result<Vec<Status>> {
 
         if matched.is_empty() {
             break;
-        } else {
-            thread.extend(matched.into_iter());
         }
 
+        thread.extend(matched.into_iter());
         descendants = remaining;
     }
 
     Ok(thread)
+}
+
+#[component]
+fn Home() -> impl IntoView {
+    let (url, set_url) = create_signal(String::from(""));
+
+    create_effect(move |_| {
+        if let Some(id) = url.get().split('/').last() {
+            let non_numeric = id.chars().find(|c| !c.is_digit(10)).is_some();
+
+            if !non_numeric {
+                let navigate = leptos_router::use_navigate();
+                navigate(&format!("/{id}"), Default::default());
+            }
+        }
+    });
+
+    view! {
+      <main class="container">
+        <div class="grid">
+          <div>
+            <input
+              type="url"
+              placeholder="Mastodon status URL"
+              aria-label="Mastodon status URL"
+              on:input=move |ev| {
+                set_url.set(event_target_value(&ev));
+              }
+              prop:value=url/>
+          </div>
+        </div>
+      </main>
+    }
 }
 
 #[component]
@@ -121,6 +153,7 @@ fn App() -> impl IntoView {
     view! {
       <Router>
         <Routes>
+          <Route path="/" view=Home/>
           <Route path="/:id" view=Threads/>
         </Routes>
       </Router>
