@@ -27,17 +27,15 @@ struct Context {
 
 #[derive(Params, PartialEq)]
 struct IdParams {
+    host: Option<String>,
     id: Option<String>,
 }
 
-async fn fetch_status_and_context(id: &str) -> Result<(Status, Context)> {
-    let status =
-        http::Request::get(&format!("https://mastodon.social/api/v1/statuses/{id}")).send();
+async fn fetch_status_and_context(host: &str, id: &str) -> Result<(Status, Context)> {
+    let status = http::Request::get(&format!("https://{host}/api/v1/statuses/{id}")).send();
 
-    let context = http::Request::get(&format!(
-        "https://mastodon.social/api/v1/statuses/{id}/context"
-    ))
-    .send();
+    let context =
+        http::Request::get(&format!("https://{host}/api/v1/statuses/{id}/context")).send();
 
     let (status, context) = (status, context).try_join().await?;
     let (status, context) = (status.json::<Status>(), context.json::<Context>())
@@ -47,8 +45,8 @@ async fn fetch_status_and_context(id: &str) -> Result<(Status, Context)> {
     Ok((status, context))
 }
 
-async fn fetch_thread(id: &str) -> Result<Vec<Status>> {
-    let (status, context) = fetch_status_and_context(id).await?;
+async fn fetch_thread(host: &str, id: &str) -> Result<Vec<Status>> {
+    let (status, context) = fetch_status_and_context(host, id).await?;
     let account_id = status.account.id.clone();
     let mut thread = vec![status];
     let mut descendants = context.descendants;
@@ -77,12 +75,17 @@ fn Home() -> impl IntoView {
     let (url, set_url) = create_signal(String::from(""));
 
     create_effect(move |_| {
-        if let Some(id) = url.get().split('/').last() {
-            let non_numeric = id.chars().find(|c| !c.is_digit(10)).is_some();
+        if let Ok(url) = url::Url::parse(&url.get()) {
+            if let (Some(host), Some(segments)) = (url.host_str(), url.path_segments()) {
+                // SAFETY: segments is `Some` and contains one element.
+                let id = segments.last().unwrap().to_owned();
 
-            if !non_numeric {
-                let navigate = leptos_router::use_navigate();
-                navigate(&format!("/{id}"), Default::default());
+                let id_is_non_numeric = id.chars().find(|c| !c.is_digit(10)).is_some();
+
+                if !id_is_non_numeric {
+                    let navigate = leptos_router::use_navigate();
+                    navigate(&format!("/{host}/{id}"), Default::default());
+                }
             }
         }
     });
@@ -109,6 +112,15 @@ fn Home() -> impl IntoView {
 fn Threads() -> impl IntoView {
     let params = use_params::<IdParams>();
 
+    let host = move || {
+        params.with(|params| {
+            params
+                .as_ref()
+                .map(|params| params.host.clone())
+                .unwrap_or_else(|_| Some(String::from("mastodon.social")))
+        })
+    };
+
     let id = move || {
         params.with(|params| {
             params
@@ -122,7 +134,8 @@ fn Threads() -> impl IntoView {
         || (),
         move |_| async move {
             let id = id().unwrap();
-            fetch_thread(&id).await.unwrap()
+            let host = host().unwrap();
+            fetch_thread(&host, &id).await.unwrap()
         },
     );
 
@@ -154,7 +167,7 @@ fn App() -> impl IntoView {
       <Router>
         <Routes>
           <Route path="/" view=Home/>
-          <Route path="/:id" view=Threads/>
+          <Route path="/:host/:id" view=Threads/>
         </Routes>
       </Router>
     }

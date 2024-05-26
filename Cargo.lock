@@ -803,6 +803,7 @@ dependencies = [
  "leptos",
  "leptos_router",
  "serde",
+ "url",
  "wasm-logger",
 ]
 

@@ -11,4 +11,5 @@ gloo-net = { version = "0.5.0", features = ["json"] }
 leptos = { version = "0.6.11", features = ["csr"] }
 leptos_router = { version = "0.6.11", features = ["csr"] }
 serde = { version = "1.0.201", features = ["derive"] }
+url = "2.5.0"
 wasm-logger = "0.2.0"
