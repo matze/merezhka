@@ -148,9 +148,19 @@ fn Threads() -> impl IntoView {
               move || match thread.get() {
                   None => view! { <p>"loading..."</p> }.into_view(),
                   Some(thread) => {
-                      thread.into_iter().map(|status| view! {
-                          <div inner_html=status.content/><hr/>
-                      }).collect_view()
+                      let author = thread.first().map_or_else(|| String::new(), |status| status.account.username.clone());
+
+                      let mut content = vec![
+                          view! {
+                              <div><h2>{author}</h2></div>
+                          }
+                      ];
+
+                      content.extend(thread.into_iter().map(|status| view! {
+                          <div inner_html=status.content/>
+                      }));
+
+                      content.collect_view()
                   }
               }
           }
