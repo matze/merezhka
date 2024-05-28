@@ -1,0 +1,8 @@
+<!doctype html><html lang=en><meta charset=utf-8><meta content="width=device-width,initial-scale=1" name=viewport><meta content="light dark" name=color-scheme><link href=https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css rel=stylesheet><link crossorigin href=/merezhka-ddb568851dd15696.js integrity=sha384-EoYBlhjz5wRJrmrxwEUxcs57i3bJXu/2+dxPAzmyJKFeCEo7wEgyivhamB6aM93g rel=modulepreload><link as=fetch crossorigin href=/merezhka-ddb568851dd15696_bg.wasm integrity=sha384-6oXQaS3Sqmdl8yRXqisSxSFRIezk9YzurFIFyo51d+IfOubPYVtNkP2vBI23MBae rel=preload type=application/wasm></head><body><script type=module>import init, * as bindings from '/merezhka-ddb568851dd15696.js';
+const wasm = await init('/merezhka-ddb568851dd15696_bg.wasm');
+
+
+window.wasmBindings = bindings;
+
+
+dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));</script></body></html>
